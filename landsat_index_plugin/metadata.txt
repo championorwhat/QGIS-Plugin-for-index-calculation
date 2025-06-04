@@ -1,0 +1,23 @@
+[general]
+name=LandsatIndexPlugin
+qgisMinimumVersion=3.22
+qgisMaximumVersion=3.99
+description=Calculate NDVI, NDBI, and NDWI from Landsat 8/9 Level 2 data
+version=1.0
+author=Pratibimb
+email=iampratibimb07rc@gmail.com
+about=This plugin calculates vegetation and land indices (NDVI, NDBI, NDWI) from Landsat 8/9 OLI/TIRS Level 2 data.
+category=Raster
+icon=icon.png
+
+homepage=http://homepage
+repository=http://repo
+tracker=http://bugs
+
+# Tags help with discoverability on the QGIS plugin hub
+tags=landsat, ndvi, ndbi, ndwi, raster, remote sensing
+
+experimental=False
+deprecated=False
+server=False
+hasProcessingProvider=no
