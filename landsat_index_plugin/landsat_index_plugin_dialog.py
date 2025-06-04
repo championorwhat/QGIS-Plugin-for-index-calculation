@@ -26,6 +26,7 @@ import os
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox
+from qgis.PyQt.QtGui import QColor
 from qgis.core import QgsRasterLayer, QgsProject
 from qgis.utils import iface
 import processing
@@ -158,7 +159,9 @@ class LandsatIndexPluginDialog(QtWidgets.QDialog, FORM_CLASS):
                 layer = QgsRasterLayer(output_path, "NDVI")
                 if layer.isValid():
                     QgsProject.instance().addMapLayer(layer)
-                    QMessageBox.information(self, "Success", "NDVI calculated and added to map!")
+                    # Apply NDVI color styling
+                    self.apply_ndvi_styling(layer)
+                    QMessageBox.information(self, "Success", "NDVI calculated and styled!")
                 else:
                     QMessageBox.critical(self, "Error", "Failed to load NDVI result!")
                     
@@ -188,7 +191,9 @@ class LandsatIndexPluginDialog(QtWidgets.QDialog, FORM_CLASS):
                 layer = QgsRasterLayer(output_path, "NDBI")
                 if layer.isValid():
                     QgsProject.instance().addMapLayer(layer)
-                    QMessageBox.information(self, "Success", "NDBI calculated and added to map!")
+                    # Apply NDBI color styling
+                    self.apply_ndbi_styling(layer)
+                    QMessageBox.information(self, "Success", "NDBI calculated and styled!")
                 else:
                     QMessageBox.critical(self, "Error", "Failed to load NDBI result!")
                     
@@ -218,7 +223,9 @@ class LandsatIndexPluginDialog(QtWidgets.QDialog, FORM_CLASS):
                 layer = QgsRasterLayer(output_path, "NDWI")
                 if layer.isValid():
                     QgsProject.instance().addMapLayer(layer)
-                    QMessageBox.information(self, "Success", "NDWI calculated and added to map!")
+                    # Apply NDWI color styling  
+                    self.apply_ndwi_styling(layer)
+                    QMessageBox.information(self, "Success", "NDWI calculated and styled!")
                 else:
                     QMessageBox.critical(self, "Error", "Failed to load NDWI result!")
                     
@@ -287,3 +294,95 @@ class LandsatIndexPluginDialog(QtWidgets.QDialog, FORM_CLASS):
                     
         except Exception as e:
             QMessageBox.critical(self, "Calculation Error", f"Error calculating EVI: {str(e)}")
+    
+    def apply_ndvi_styling(self, layer):
+        """Apply NDVI color styling (Red-Yellow-Green)."""
+        from qgis.core import QgsRasterShader, QgsColorRampShader, QgsSingleBandPseudoColorRenderer
+        
+        try:
+            # Create color ramp shader
+            shader = QgsRasterShader()
+            ramp_shader = QgsColorRampShader()
+            ramp_shader.setColorRampType(QgsColorRampShader.Interpolated)
+            
+            # Define NDVI color points
+            color_points = [
+                QgsColorRampShader.ColorRampItem(-1, QColor(165, 0, 38), '-1.0'),    # Dark Red
+                QgsColorRampShader.ColorRampItem(-0.2, QColor(215, 48, 39), '-0.2'), # Red  
+                QgsColorRampShader.ColorRampItem(0, QColor(252, 141, 89), '0.0'),    # Orange
+                QgsColorRampShader.ColorRampItem(0.2, QColor(254, 224, 139), '0.2'), # Yellow
+                QgsColorRampShader.ColorRampItem(0.4, QColor(217, 239, 139), '0.4'), # Light Green
+                QgsColorRampShader.ColorRampItem(0.6, QColor(166, 217, 106), '0.6'), # Green
+                QgsColorRampShader.ColorRampItem(0.8, QColor(102, 189, 99), '0.8'),  # Dark Green
+                QgsColorRampShader.ColorRampItem(1, QColor(26, 152, 80), '1.0')      # Darkest Green
+            ]
+            
+            ramp_shader.setColorRampItemList(color_points)
+            shader.setRasterShaderFunction(ramp_shader)
+            
+            # Apply renderer
+            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1, shader)
+            layer.setRenderer(renderer)
+            layer.triggerRepaint()
+            
+        except Exception as e:
+            print(f"Error applying NDVI styling: {e}")
+    
+    def apply_ndbi_styling(self, layer):
+        """Apply NDBI color styling (Green-Yellow-Red)."""
+        from qgis.core import QgsRasterShader, QgsColorRampShader, QgsSingleBandPseudoColorRenderer
+        
+        try:
+            shader = QgsRasterShader()
+            ramp_shader = QgsColorRampShader()
+            ramp_shader.setColorRampType(QgsColorRampShader.Interpolated)
+            
+            # Define NDBI color points (Green to Red for built-up areas)
+            color_points = [
+                QgsColorRampShader.ColorRampItem(-1, QColor(0, 104, 55), '-1.0'),    # Dark Green
+                QgsColorRampShader.ColorRampItem(-0.2, QColor(102, 189, 99), '-0.2'), # Green
+                QgsColorRampShader.ColorRampItem(0, QColor(254, 224, 139), '0.0'),    # Yellow
+                QgsColorRampShader.ColorRampItem(0.2, QColor(252, 141, 89), '0.2'),  # Orange
+                QgsColorRampShader.ColorRampItem(0.5, QColor(215, 48, 39), '0.5'),   # Red
+                QgsColorRampShader.ColorRampItem(1, QColor(165, 0, 38), '1.0')       # Dark Red
+            ]
+            
+            ramp_shader.setColorRampItemList(color_points)
+            shader.setRasterShaderFunction(ramp_shader)
+            
+            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1, shader)
+            layer.setRenderer(renderer)
+            layer.triggerRepaint()
+            
+        except Exception as e:
+            print(f"Error applying NDBI styling: {e}")
+    
+    def apply_ndwi_styling(self, layer):
+        """Apply NDWI color styling (Brown-Yellow-Blue)."""
+        from qgis.core import QgsRasterShader, QgsColorRampShader, QgsSingleBandPseudoColorRenderer
+        
+        try:
+            shader = QgsRasterShader()
+            ramp_shader = QgsColorRampShader()
+            ramp_shader.setColorRampType(QgsColorRampShader.Interpolated)
+            
+            # Define NDWI color points (Brown to Blue for water)
+            color_points = [
+                QgsColorRampShader.ColorRampItem(-1, QColor(140, 81, 10), '-1.0'),   # Brown
+                QgsColorRampShader.ColorRampItem(-0.2, QColor(191, 129, 45), '-0.2'), # Light Brown
+                QgsColorRampShader.ColorRampItem(0, QColor(254, 224, 139), '0.0'),    # Yellow
+                QgsColorRampShader.ColorRampItem(0.2, QColor(153, 213, 148), '0.2'), # Light Blue-Green
+                QgsColorRampShader.ColorRampItem(0.5, QColor(102, 194, 164), '0.5'), # Blue-Green
+                QgsColorRampShader.ColorRampItem(0.8, QColor(44, 123, 182), '0.8'),  # Blue
+                QgsColorRampShader.ColorRampItem(1, QColor(8, 48, 107), '1.0')       # Dark Blue
+            ]
+            
+            ramp_shader.setColorRampItemList(color_points)
+            shader.setRasterShaderFunction(ramp_shader)
+            
+            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1, shader)
+            layer.setRenderer(renderer)
+            layer.triggerRepaint()
+            
+        except Exception as e:
+            print(f"Error applying NDWI styling: {e}")
